@@ -74,7 +74,16 @@ def is_contiguous(state):
 	else:
 		return False
 
-
+def get_adjacent_valid_vacancies(pos,state):
+	open_tiles = []
+	for tile in adjacent_tiles(pos):
+			if (tile not in state) : #if the tile is not occupied and hasnt already been counted
+				for anchor_tile in adjacent_tiles(tile):
+					if anchor_tile == (pos): #We arent interested in the center tile
+						continue
+					if (anchor_tile in state) and (tile not in open_tiles): #if the vacant tile is adjacent to a tile and is new
+						open_tiles.append(tile)
+	return open_tiles
 
 class Hex():
 
@@ -125,24 +134,12 @@ class Queen(Hex):
 
 	def valid_moves(self, pieces):
 
-		open_tiles = [] #all the tiles that you could place the tile
 		accessible_tiles = [] #all the tiles that you can slide into
 		valid_moves = [] #all the tiles that you can slide into that dont disconnect the board
 		#find all unoccupied pieces adjacent to another piece that the piece can move to
-		for tile in adjacent_tiles(self.pos):
-			if (tile not in pieces) : #if the tile is not occupied and hasnt already been counted
-				for anchor_tile in adjacent_tiles(tile):
-					if anchor_tile == (self.pos):
-						continue
-					if (anchor_tile in pieces) and (tile not in open_tiles): #if the vacant tile is adjacent to a tile that is not the queen
-						print(tile)
-						open_tiles.append(tile)
-
-		print('All Open Tiles:')
-		print(open_tiles)
+		open_tiles = get_adjacent_valid_vacancies(self.pos, pieces) #all the tiles that you could place the tile
 
 		#Check to see if you can squeeze into these spots
-		
 		for tile in open_tiles:
 			if can_squeeze(self.pos,tile,pieces):
 				accessible_tiles.append(tile)
@@ -152,33 +149,82 @@ class Queen(Hex):
 			state = pieces.copy()
 			state.remove(self.pos)
 			state.append(move) #If the board must stay connected while moving remove this
-			print('Possible state:')
-			print(state)
 			if is_contiguous(state):
 				valid_moves.append(move) #remove this move because it must violate the rules
 
 		return valid_moves
+
+	def is_alive(self,state):
+		for tile in adjacent_tiles(self.pos):
+			if tile not in state:
+				return True
+		return False
+
+class Ant(Hex):
+
+	def __init__(self, player, pos, screen):
+		if player == 1:
+			color = (210,180,140)
+			linewidth = 0
+		elif player == -1:
+			color = (25,25,25)
+			linewidth = 0
+		self.player = player
+		Hex.__init__(self, pos, screen, 'ant.png', color, linewidth)
+
+	def valid_moves(self, state):
+		accessible_tiles = []
+		valid_moves = []
+		seed_tiles = []
+
+		open_tiles = get_adjacent_valid_vacancies(self.pos, state)
+		for tile in open_tiles:
+			if can_squeeze(self.pos, tile, state):
+				seed_tiles.append(tile)
+
+		while len(seed_tiles) != 0:
+			for tile in seed_tiles:
+				new_tiles = get_adjacent_valid_vacancies(tile, state)
+				for new_tile in new_tiles:
+					if (new_tile not in accessible_tiles) and can_squeeze(tile, new_tile, state):
+						seed_tiles.append(new_tile)
+						accessible_tiles.append(new_tile)
+				seed_tiles.remove(tile)
+
+		for tile in accessible_tiles:
+			possible_state = state.copy()
+			possible_state.remove(self.pos)
+			possible_state.append(tile)
+			if is_contiguous(possible_state):
+				valid_moves.append(tile)
+
+		return valid_moves
+
+
+
+
 
 
 if __name__ == '__main__':
 	pygame.init()
 	screen = pygame.display.set_mode(win_size)
 
-
-
-	player = Queen(1,(1,0),screen)
-
+	queen = Queen(1,(1,0),screen)
+	ant = Ant(-1,(2,0), screen)
 
 	state = [(0,1),
 			 (1,-1),
-			 (0,-1)]
+			 (0,-1),
+			 (-1,1)]
+	state.append(queen.pos)
+	state.append(ant.pos)
 
-	state.append(player.pos)
 	obstacles = []
 	for tile in state:
 		obstacles.append(Hex(tile,screen))
 
-	moves = player.valid_moves(state)
+	moves = ant.valid_moves(state)
+	print(moves)
 	options = []
 	for move in moves:
 		temp = Hex(move,screen)
@@ -195,7 +241,8 @@ if __name__ == '__main__':
 		
 		for obstacle in obstacles:
 			obstacle.draw()
-		player.draw()
+		queen.draw()
+		ant.draw()
 		for option in options:
 			option.draw()
 		pygame.display.flip()

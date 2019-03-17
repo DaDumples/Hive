@@ -2,6 +2,7 @@ from Hive import *
 import pygame
 import numpy
 import time
+import sys
 
 
 win_size = (1080,720)
@@ -39,7 +40,8 @@ state = [(0,0),
 		 (-2,0),
 		 (-2,1),
 		 (-1,1),
-		 (0,1)]
+		 (0,1),
+		 (0,4)]
 
 Hexs = {}
 for tile in state:
@@ -58,6 +60,7 @@ Hexs[seed].color = (0,255,0)
 draw_everything(Hexs, screen)
 time.sleep(1)
 
+start = time.time()
 for tile in adjacent_tiles(seed):
 	if tile in state: #for every existing tile adjacent to the seed
 		new_tiles.append(tile) #add the adjacent tile to the search
@@ -76,3 +79,11 @@ while len(new_tiles) != 0: #until there are no tiles left to check
 		Hexs = highlight_hexes(Hexs, new_tiles, contiguous_tiles)
 		draw_everything(Hexs, screen)
 		time.sleep(1)
+
+stop = time.time()
+print('Done. Time elapsed: ')
+print(stop-start)
+while True:
+	for event in pygame.event.get():
+		if event.type == pygame.QUIT:
+			sys.exit()
