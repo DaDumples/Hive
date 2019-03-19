@@ -109,13 +109,8 @@ def unit_rotate(direct, direct_string, num_rots = 1):
 
 def is_contiguous(state):
 	floor_tiles = [x for x in state if x[2] == 0]
-	seed = floor_tiles[0] #random starting tile
-	contiguous_tiles = [seed] #a list of all tiles that are touching the starting tile
-	new_tiles = [] #tiles on the edge of the search
-	for tile in adjacent_tiles(seed):
-		if tile in state: #for every existing tile adjacent to the seed
-			new_tiles.append(tile) #add the adjacent tile to the search
-			contiguous_tiles.append(tile) #add the adjacent tile to the list of touching tiles
+	contiguous_tiles = [floor_tiles[0]] #a list of all tiles that are touching the starting tile
+	new_tiles = [floor_tiles[0]] #tiles on the edge of the search
 
 	while len(new_tiles) != 0: #until there are no tiles left to check
 		for tile in new_tiles: #for each tile to check
@@ -125,7 +120,7 @@ def is_contiguous(state):
 					contiguous_tiles.append(adj_tile) #add it to the total touching tiles
 			new_tiles.remove(tile) #Now that it is searched remove this tile from the search pool
 
-	if len(contiguous_tiles) == len(state): #if we didnt find all the tiles in our search, there must be a gap
+	if len(contiguous_tiles) == len(floor_tiles): #if we didnt find all the tiles in our search, there must be a gap
 		return True
 	else:
 		return False
@@ -142,60 +137,81 @@ def get_adjacent_valid_vacancies(pos,state):
 						break
 	return open_tiles
 
+def top_tile(pos, state):
+	on_top = not state[pos].under_beetle
+	top_tile = pos
+	while not on_top:
+		top_tile = (top_tile[0],top_tile[1], top_tile[2]+1)
+		on_top = not state[top_tile].under_beetle
+	return top_tile
+
+
 class Hex():
 
-	def __init__(self, pos, screen, im_file = None, color = (180,180,180), linewidth = 0):
-		win_size = pygame.display.get_surface().get_size()
+
+	def __init__(self, pos, screen, im_file = None, color = (180,180,180), linecolor = (0,0,0), linewidth = 2):
+		self.win_size = pygame.display.get_surface().get_size()
 		if len(pos) == 2:
 			self.pos = (pos[0],pos[1],0)
 		elif len(pos) == 3:
 			self.pos = pos
 
-		self.r = win_size[1]*.95/22 #radius is so that 22 hexes can
+		self.r = self.win_size[1]*.95/22 #radius is so that 22 hexes can
 									#fit on the screen with some margin
 									#r is the apothem of the hexagon
 		self.screen = screen
 		self.color = color
 		self.linewidth = linewidth
-
-		radius = self.r*.98
-		points =[(radius*cos(x), radius*sin(x)) for x in linspace(0,2*pi, 7)+pi/6]
+		self.linecolor = linecolor
+		
 		self.hex_to_pix = array([[2*self.r, 2*self.r*cos(pi/3)],
 				   				 [0, 		-2*self.r*sin(pi/3)]])
 
-		pixelpos = self.hex_to_pix@array([self.pos[0],self.pos[1]]) #position of the hex center in pixels
+		self.vertical_offset = .15*self.r
+		self.pixelpos = self.hex_to_pix@array([self.pos[0],self.pos[1]]) #position of the hex center in pixels
 
-		self.pointlist = [(int(x + win_size[0]/2 + pixelpos[0]), int(y + win_size[1]/2 + pixelpos[1])) for x, y in points]
+		radius = self.r*.98
+		self.hex_points = [(radius*cos(x), radius*sin(x)) for x in linspace(0,2*pi, 7)+pi/6]
+
+		self.pointlist = [[int(x + self.win_size[0]/2 + self.pixelpos[0] + self.vertical_offset*self.pos[2]),
+						   int(y + self.win_size[1]/2 + self.pixelpos[1] - self.vertical_offset*self.pos[2])] for x, y in self.hex_points]
 
 		if im_file == None:
 			self.im = None
 		else:
 			self.im = pygame.image.load(im_file).convert()
-			size = self.im.get_rect().size
-			self.im_pos = (pixelpos[0] - size[0]/2 + win_size[0]/2, pixelpos[1] - size[1]/2 + win_size[1]/2)
+			self.im_size = self.im.get_rect().size
+			self.im_pos = [self.pixelpos[0] - self.im_size[0]/2 + self.win_size[0]/2 + self.vertical_offset*self.pos[2],
+						   self.pixelpos[1] - self.im_size[1]/2 + self.win_size[1]/2 - self.vertical_offset*self.pos[2]]
 
 	def draw(self):
-		pygame.draw.polygon(self.screen, self.color, self.pointlist, self.linewidth)
+			
+		pygame.draw.polygon(self.screen, self.color, self.pointlist, 0)
+		pygame.draw.polygon(self.screen, self.linecolor, self.pointlist, self.linewidth)
 		if self.im != None:
 			self.screen.blit(self.im, self.im_pos)
 
-	def move(self, position):
-		self.position = position
-
-
+	def move_to(self, position):
+		self.pos = position
+		self.pixelpos = self.hex_to_pix@array([self.pos[0],self.pos[1]]) #position of the hex center in pixels
+		self.pointlist = [[int(x + self.win_size[0]/2 + self.pixelpos[0] + self.vertical_offset*self.pos[2]),
+						   int(y + self.win_size[1]/2 + self.pixelpos[1] - self.vertical_offset*self.pos[2])] for x, y in self.hex_points]
+		if self.im != None:
+			self.im_pos = [self.pixelpos[0] - self.im_size[0]/2 + self.win_size[0]/2 + self.vertical_offset*self.pos[2],
+						   self.pixelpos[1] - self.im_size[1]/2 + self.win_size[1]/2 - self.vertical_offset*self.pos[2]]
 
 class Queen(Hex):
 
 	def __init__(self, player, pos, screen):
 		if player == 1:
-			color = (210,180,140)
-			linewidth = 0
+			color = (210,180,140)		
 		elif player == -1:
 			color = (25,25,25)
-			linewidth = 0
+
+		linecolor = (255,215,0)
 		self.player = player
 		self.under_beetle = False
-		Hex.__init__(self, pos, screen, 'bee.png', color, linewidth)
+		Hex.__init__(self, pos, screen, 'bee.png', color, linecolor)
 
 	def valid_moves(self, pieces):
 
@@ -225,21 +241,18 @@ class Queen(Hex):
 				return True
 		return False
 
-
-
-
 class Ant(Hex):
 
 	def __init__(self, player, pos, screen):
 		if player == 1:
 			color = (210,180,140)
-			linewidth = 0
 		elif player == -1:
 			color = (25,25,25)
-			linewidth = 0
+
+		linecolor = (0,191,255)
 		self.player = player
 		self.under_beetle = False
-		Hex.__init__(self, pos, screen, 'ant.png', color, linewidth)
+		Hex.__init__(self, pos, screen, 'ant.png', color, linecolor)
 
 	def valid_moves(self, state):
 
@@ -247,9 +260,9 @@ class Ant(Hex):
 			return []
 
 		#evaluate wheter the board is still contiguous
-		move_state = list(state.keys())
-		move_state.remove(self.pos)
-		if not is_contiguous(move_state):
+		state = state.copy()
+		state.pop(self.pos)
+		if not is_contiguous(state):
 			return [] #There are no valid moves
 
 		valid_moves = []
@@ -257,17 +270,17 @@ class Ant(Hex):
 
 		while len(seed_tiles) != 0: #While there are still valid tiles that are new
 			for tile in seed_tiles:
-				new_tiles = get_adjacent_valid_vacancies(tile, move_state)
+				new_tiles = get_adjacent_valid_vacancies(tile, state)
 				if self.pos in new_tiles:
 					new_tiles.remove(self.pos)
 
 				dead_end = False
 				possibilities = []
 				for new_tile in new_tiles: #for each tile adjacent to the tile being checked
-					if not can_squeeze(tile, new_tile, move_state): #If this tile is adjacent to a gap
+					if not can_squeeze(tile, new_tile, state): #If this tile is adjacent to a gap
 						dead_end = True #the cant can not cross gaps
 						break
-					elif (new_tile not in valid_moves) and not is_jump(tile, new_tile, move_state):
+					elif (new_tile not in valid_moves) and not is_jump(tile, new_tile, state):
 						#if the tile is new and you dont have to jump to get it
 						possibilities.append(new_tile)
 				if not dead_end:
@@ -283,14 +296,14 @@ class Beetle(Hex):
 	def __init__(self, player, pos, screen):
 		if player == 1:
 			color = (210,180,140)
-			linewidth = 0
 		elif player == -1:
 			color = (25,25,25)
-			linewidth = 0
+
+		linecolor = (153,50,204)
 		self.player = player
 		self.under_beetle = False
 		self.stack_pos = 0
-		Hex.__init__(self, pos, screen, 'ant.png', color, linewidth)
+		Hex.__init__(self, pos, screen, 'beetle.png', color, linecolor)
 
 	def valid_moves(self, state):
 		#evaluate wheter the board is still contiguous
@@ -299,24 +312,96 @@ class Beetle(Hex):
 			return []
 
 		state = state.copy()
-		state.remove(self.pos)
+		state.pop(self.pos)
 		if not is_contiguous(state):
 			return [] #There are no valid moves
 
 		valid_moves = [] #all the tiles that you can slide into that dont disconnect the board
 		#find all unoccupied pieces adjacent to another piece that the piece can move to
-		open_tiles = get_adjacent_valid_vacancies(self.pos, state) #all the tiles that you could place the tile
-		for tile in adjacent_tiles(self.pos, state): #add tiles that already have a bug on them since the
-													 #the beetle can move over other peices
+		for tile in adjacent_tiles((self.pos[0], self.pos[1], 0)): #add tiles that already have a bug on them since the
+											  #the beetle can move over other peices
 			if tile in state:
-				open_tiles.append(tile)
-
-		#If you are on ground level, check to see if you can squeeze into these spots
-		for tile in open_tiles:
-			if can_squeeze(self.pos,tile,pieces) and not is_jump(self.pos, tile, pieces):
-				valid_moves.append(tile)
+				tippy_top = top_tile(tile, state)
+				valid_moves.append((tippy_top[0],tippy_top[1], tippy_top[2]+1))
+			else:
+				for anchor in adjacent_tiles(tile):
+					if anchor in state:
+						valid_moves.append(tile)
+						break
 		
 		return valid_moves
+
+class Spider(Hex):
+
+	def __init__(self, player, pos, screen):
+		if player == 1:
+			color = (210,180,140)
+		elif player == -1:
+			color = (25,25,25)
+
+		linecolor = (139,69,19)
+		self.player = player
+		self.under_beetle = False
+		self.stack_pos = 0
+		Hex.__init__(self, pos, screen, 'spider.png', color, linecolor)
+
+	def valid_moves(self, state):
+
+		if self.under_beetle:
+			return []
+
+		#evaluate wheter the board is still contiguous
+		state = state.copy()
+		state.pop(self.pos)
+		if not is_contiguous(state):
+			return [] #There are no valid moves
+
+
+		seed_tiles = [self.pos]
+		count = 0
+		while (len(seed_tiles) != 0) and (count < 3): #while we still have tiles to check
+													  #while we have moved less than three spaces
+			new_tiles = []
+			for tile in seed_tiles:
+				for x in get_adjacent_valid_vacancies(tile, state): #get the open spaces around each seed
+					if can_squeeze(tile, x, state) and not is_jump(tile, x, state):
+						#if you can get to this tile append it to the new tiles list
+						new_tiles.append(x)
+			seed_tiles = new_tiles #the new seeds are the possible moves from the last ones
+			count +=1
+
+		valid_moves = list(set(seed_tiles))
+
+		return valid_moves
+
+
+class Grasshopper(Hex):
+
+	def __init__(self, player, pos, screen):
+		if player == 1:
+			color = (210,180,140)
+		elif player == -1:
+			color = (25,25,25)
+
+		linecolor = (0,128,0)
+		self.player = player
+		self.under_beetle = False
+		self.stack_pos = 0
+		self.directions = [(1,0)]
+		Hex.__init__(self, pos, screen, 'spider.png', color, linecolor)
+
+	def valid_moves(self, state):
+
+		if self.under_beetle:
+			return []
+
+		#evaluate wheter the board is still contiguous
+		state = state.copy()
+		state.pop(self.pos)
+		if not is_contiguous(state):
+			return [] #There are no valid moves
+
+		return []
 
 class Board():
 
@@ -332,15 +417,18 @@ class Board():
 	def valid_placements(self, player):
 		valid_tiles = []
 		#find all the tiles you are allowed to place next to
-		player_tiles = [x.pos for x in self.state.values()
-						 if x.player == player and x.pos[2] == 0]
+
+
+		player_tiles = [x for x in self.state
+						 if self.state[x].player == player and self.state[x].pos[2] == 0]
+
 		for player_tile in player_tiles:
 			#all the open tiles adjacent to a 
 			candidate_tiles = [x for x in adjacent_tiles(player_tile)
 								 if x not in self.state]
 
 			for tile in candidate_tiles:
-				#if we have already confirmed it move on
+				#if we have already confirmed it, move on
 				if tile in valid_tiles:
 					continue
 
@@ -349,7 +437,8 @@ class Board():
 					# if one tile adjacent to a candidate is an opponents
 					# it is not a valid location to place a tile
 					if check in self.state:
-						if self.state[check].player != player:
+						tippy_top = top_tile(check, self.state)
+						if self.state[tippy_top].player != player:
 							valid = False
 							break
 				#if its valid add it to the list
@@ -365,9 +454,20 @@ class Board():
 
 	def move(self, start_pos, end_pos):
 		if start_pos in self.state:
-			self.state[start_pos].move(start_pos, end_pos)
+			self.state[start_pos].move_to(end_pos)
 			self.state[end_pos] = self.state.pop(start_pos) #delete old position and add new position
+			if end_pos[2] != 0:
+				self.state[(end_pos[0], end_pos[1], end_pos[2]-1)].under_beetle = True
+			if start_pos[2] != 0:
+				self.state[(start_pos[0], start_pos[1], start_pos[2]-1)].under_beetle = False
 
 	def draw(self, mousepos = None):
-		for piece in self.state.values():
-			piece.draw()
+
+		#draw the tiles from bottom to top
+		bottom_tiles = [tile for tile in self.state.values() if tile.pos[2] == 0]
+		level = 0
+		while len(bottom_tiles) != 0:
+			level += 1
+			for piece in bottom_tiles:
+				piece.draw()
+			bottom_tiles = [tile for tile in self.state.values() if tile.pos[2] == level]

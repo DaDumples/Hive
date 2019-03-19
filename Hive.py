@@ -10,19 +10,18 @@ if __name__ == '__main__':
 	screen = pygame.display.set_mode(win_size)
 
 	queen = Queen(1,(1,0),screen)
+	beetle = Beetle(-1,(0,4,0),screen)
+	ant = Ant(-1,(2,0,0),screen)
+	spider = Spider(1,(1,-2),screen)
 
 	state = [(0,1,0),
 			 (1,-1,0),
 			 (0,-1,0),
 			 (-1,1,0),
 			 (2,-2,0),
-			 (2,-3,0),
 			 (1,-3,0),
-			 (-1,-1,0)]
-	# state = [(1,-1,0),
-	# 		 (0,0,0),
-	# 		 (2,0,0),
-	# 		 (1,1,0)]
+			 (-1,-1,0),
+			 (2,-3,0)]
 
 	board = Board()
 	p = 1
@@ -30,9 +29,17 @@ if __name__ == '__main__':
 		board.add( Ant(p,tile,screen))
 		p = -p
 	board.add(queen)
+	board.add(beetle)
+	board.add(ant)
+	board.add(spider)
+	board.move((2,0,0),(0,0,0))
+
+	board.move((0,4,0),(0,1,1))
+	board.move((0,1,1),(1,0,1))
+	#board.move((1,0,1),(2,0,0))
 
 	
-	moves = board.valid_placements(1)
+	moves = spider.valid_moves(board.state)
 	print(moves)
 
 
@@ -47,7 +54,7 @@ if __name__ == '__main__':
 			if event.type == pygame.QUIT:
 				sys.exit()
 
-		screen.fill((250,250,250))
+		screen.fill((150,150,150))
 		board.draw()
 		for option in options:
 			option.draw()
