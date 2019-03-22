@@ -48,18 +48,22 @@ obstacles[seed] = Hex(seed,screen,color = (0,0,255))
 highlights = {}
 
 seed_tiles = [seed]
+prev_moves = []
 count = 0
 while (len(seed_tiles) != 0) and (count < 3): #While there are still valid tiles that are new
 	highlights = highlight_hexes(seed_tiles)
 	draw_everything(obstacles, highlights, screen)
-	time.sleep(2)
+	time.sleep(1)
 
 	new_tiles = []
+	
 	for tile in seed_tiles:
 		for x in get_adjacent_valid_vacancies(tile, state):
-			if can_squeeze(tile, x, state) and not is_jump(tile, x, state):
+			if can_squeeze(tile, x, state) and not is_jump(tile, x, state) and (not x in prev_moves):
 				new_tiles.append(x)
-	seed_tiles = new_tiles
+				
+	prev_moves = seed_tiles.copy()
+	seed_tiles = new_tiles.copy()
 
 	print(len(seed_tiles))
 	print(count)

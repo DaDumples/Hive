@@ -148,99 +148,27 @@ def top_tile(pos, state):
 		on_top = not state[top_tile].under_beetle
 	return top_tile
 
+class Queen():
 
+	def __init__(self, player, pos):
+		self.player = player
+		self.under_beetle = False
+		self.bug = 'queen'
 
-class Outline():
-
-	def __init__(self, pos, screen = None, color = (180,180,180), linewidth = 4):
-		self.pos = pos
-		self.screen = screen
-		self.color = color
-		self.linewidth = linewidth
-		self.win_size = pygame.display.get_surface().get_size()
-		self.r = self.win_size[1]*.95/44
-		self.hex_points = [(self.r*cos(x), self.r*sin(x)) for x in linspace(0,2*pi, 7)+pi/6]
-
-		self.hex_to_pix = array([[2*self.r, 2*self.r*cos(pi/3)],
-				   				 [0, 		-2*self.r*sin(pi/3)]])
-		self.pixelpos = self.hex_to_pix@array([self.pos[0],self.pos[1]]) #position of the hex center in pixels
-		self.pointlist = [[int(x + self.win_size[0]/2 + self.pixelpos[0]),
-						   int(y + self.win_size[1]/2 + self.pixelpos[1])] for x, y in self.hex_points]
-
-	def draw(self):
-		if self.screen != None:
-			pygame.draw.polygon(self.screen, self.color, self.pointlist, self.linewidth)
-
-
-
-
-
-
-class Hex():
-
-
-	def __init__(self, pos, screen = None, im_file = None, color = (180,180,180), linecolor = (0,0,0), linewidth = 2):
-		self.win_size = pygame.display.get_surface().get_size()
 		if len(pos) == 2:
-			self.pos = (pos[0],pos[1],0)
+			self.pos = (pos[0], pos[1], 0)
 		elif len(pos) == 3:
 			self.pos = pos
 
-		self.r = self.win_size[1]*.95/44 #radius is so that 22 hexes can
-									#fit on the screen with some margin
-									#r is the apothem of the hexagon
-		self.r_inner = self.r*.98
-		self.screen = screen
-		self.color = color
-		self.linewidth = linewidth
-		self.linecolor = linecolor
-		
-		self.hex_to_pix = array([[2*self.r, 2*self.r*cos(pi/3)],
-				   				 [0, 		-2*self.r*sin(pi/3)]])
-
-		self.vertical_offset = .15*self.r
-		self.hex_points = [(self.r_inner*cos(x), self.r_inner*sin(x)) for x in linspace(0,2*pi, 7)+pi/6]
-		self.pixelpos = self.hex_to_pix@array([self.pos[0],self.pos[1]]) #position of the hex center in pixels
-		self.pointlist = [[int(x + self.win_size[0]/2 + self.pixelpos[0] + self.vertical_offset*self.pos[2]),
-						   int(y + self.win_size[1]/2 + self.pixelpos[1] - self.vertical_offset*self.pos[2])] for x, y in self.hex_points]
-
-		if im_file == None:
-			self.im = None
-		else:
-			self.im = pygame.transform.scale(pygame.image.load(im_file).convert(),(20,20))
-			self.im_size = self.im.get_rect().size
-			self.im_pos = [self.pixelpos[0] - self.im_size[0]/2 + self.win_size[0]/2 + self.vertical_offset*self.pos[2],
-						   self.pixelpos[1] - self.im_size[1]/2 + self.win_size[1]/2 - self.vertical_offset*self.pos[2]]
-
-	def draw(self):
-		
-		if self.screen != None:
-			pygame.draw.polygon(self.screen, self.color, self.pointlist, 0)
-			pygame.draw.polygon(self.screen, self.linecolor, self.pointlist, self.linewidth)
-			if self.im != None:
-				self.screen.blit(self.im, self.im_pos)
-
-	def move_to(self, position):
-		self.pos = position
-		self.pixelpos = self.hex_to_pix@array([self.pos[0],self.pos[1]]) #position of the hex center in pixels
-		self.pointlist = [[int(x + self.win_size[0]/2 + self.pixelpos[0] + self.vertical_offset*self.pos[2]),
-						   int(y + self.win_size[1]/2 + self.pixelpos[1] - self.vertical_offset*self.pos[2])] for x, y in self.hex_points]
-		if self.im != None:
-			self.im_pos = [self.pixelpos[0] - self.im_size[0]/2 + self.win_size[0]/2 + self.vertical_offset*self.pos[2],
-						   self.pixelpos[1] - self.im_size[1]/2 + self.win_size[1]/2 - self.vertical_offset*self.pos[2]]
-
-class Queen(Hex):
-
-	def __init__(self, player, pos, screen):
 		if player == 1:
-			color = (210,180,140)		
+			self.color = (210,180,140)		
 		elif player == -1:
-			color = (25,25,25)
+			self.color = (25,25,25)
 
-		linecolor = (255,215,0)
-		self.player = player
-		self.under_beetle = False
-		Hex.__init__(self, pos, screen, 'bee.png', color, linecolor)
+		self.linecolor = (255,215,0)
+		self.im = pygame.image.load('bee.png').convert()
+		self.im_size = self.im.get_rect().size
+
 
 	def valid_moves(self, pieces):
 
@@ -270,18 +198,27 @@ class Queen(Hex):
 				return True
 		return False
 
-class Ant(Hex):
 
-	def __init__(self, player, pos, screen):
-		if player == 1:
-			color = (210,180,140)
-		elif player == -1:
-			color = (25,25,25)
+class Ant():
 
-		linecolor = (0,191,255)
+	def __init__(self, player, pos):
 		self.player = player
 		self.under_beetle = False
-		Hex.__init__(self, pos, screen, 'ant.png', color, linecolor)
+		self.bug = 'ant'
+
+		if len(pos) == 2:
+			self.pos = (pos[0], pos[1], 0)
+		elif len(pos) == 3:
+			self.pos = pos
+
+		if player == 1:
+			self.color = (210,180,140)
+		elif player == -1:
+			self.color = (25,25,25)
+
+		self.linecolor = (0,191,255)
+		self.im = pygame.image.load('ant.png').convert()
+		self.im_size = self.im.get_rect().size
 
 	def valid_moves(self, state):
 
@@ -320,19 +257,28 @@ class Ant(Hex):
 
 		return valid_moves
 
-class Beetle(Hex):
 
-	def __init__(self, player, pos, screen):
-		if player == 1:
-			color = (210,180,140)
-		elif player == -1:
-			color = (25,25,25)
+class Beetle():
 
-		linecolor = (153,50,204)
+	def __init__(self, player, pos):
+
 		self.player = player
 		self.under_beetle = False
-		self.stack_pos = 0
-		Hex.__init__(self, pos, screen, 'beetle.png', color, linecolor)
+		self.bug = 'beetle'
+
+		if len(pos) == 2:
+			self.pos = (pos[0], pos[1], 0)
+		elif len(pos) == 3:
+			self.pos = pos
+
+		if player == 1:
+			self.color = (210,180,140)
+		elif player == -1:
+			self.color = (25,25,25)
+
+		self.linecolor = (153,50,204)
+		self.im = pygame.image.load('beetle.png').convert()
+		self.im_size = self.im.get_rect().size
 
 	def valid_moves(self, state):
 		#evaluate wheter the board is still contiguous
@@ -360,19 +306,28 @@ class Beetle(Hex):
 		
 		return valid_moves
 
-class Spider(Hex):
 
-	def __init__(self, player, pos, screen):
-		if player == 1:
-			color = (210,180,140)
-		elif player == -1:
-			color = (25,25,25)
+class Spider():
 
-		linecolor = (139,69,19)
+	def __init__(self, player, pos):
+
 		self.player = player
 		self.under_beetle = False
-		self.stack_pos = 0
-		Hex.__init__(self, pos, screen, 'spider.png', color, linecolor)
+		self.bug = 'spider'
+
+		if len(pos) == 2:
+			self.pos = (pos[0], pos[1], 0)
+		elif len(pos) == 3:
+			self.pos = pos
+
+		if player == 1:
+			self.color = (210,180,140)
+		elif player == -1:
+			self.color = (25,25,25)
+
+		self.linecolor = (139,69,19)
+		self.im = pygame.image.load('spider.png').convert()
+		self.im_size = self.im.get_rect().size
 
 	def valid_moves(self, state):
 
@@ -387,15 +342,18 @@ class Spider(Hex):
 
 
 		seed_tiles = [self.pos]
+		prev_moves = []
 		count = 0
 		while (len(seed_tiles) != 0) and (count < 3): #while we still have tiles to check
 													  #while we have moved less than three spaces
 			new_tiles = []
+			
 			for tile in seed_tiles:
 				for x in get_adjacent_valid_vacancies(tile, state): #get the open spaces around each seed
-					if can_squeeze(tile, x, state) and not is_jump(tile, x, state):
-						#if you can get to this tile append it to the new tiles list
+					if can_squeeze(tile, x, state) and not is_jump(tile, x, state) and not (x in prev_moves):
+						#if you can get to this tile, and you are moving forwards append it to the new tiles list
 						new_tiles.append(x)
+			prev_moves = seed_tiles
 			seed_tiles = new_tiles #the new seeds are the possible moves from the last ones
 			count +=1
 
@@ -403,20 +361,27 @@ class Spider(Hex):
 
 		return valid_moves
 
-class Grasshopper(Hex):
 
-	def __init__(self, player, pos, screen):
-		if player == 1:
-			color = (210,180,140)
-		elif player == -1:
-			color = (25,25,25)
+class Grasshopper():
 
-		linecolor = (0,128,0)
+	def __init__(self, player, pos):
 		self.player = player
 		self.under_beetle = False
-		self.stack_pos = 0
-		self.directions = [(1,0)]
-		Hex.__init__(self, pos, screen, 'grasshopper.png', color, linecolor)
+		self.bug = 'grasshopper'
+
+		if len(pos) == 2:
+			self.pos = (pos[0], pos[1], 0)
+		elif len(pos) == 3:
+			self.pos = pos
+
+		if player == 1:
+			self.color = (210,180,140)
+		elif player == -1:
+			self.color = (25,25,25)
+
+		self.linecolor = (0,128,0)
+		self.im = pygame.image.load('grasshopper.png').convert()
+		self.im_size = self.im.get_rect().size
 
 	def valid_moves(self, state):
 
@@ -446,28 +411,34 @@ class Grasshopper(Hex):
 
 class Board():
 
-	def __init__(self, screen, bounds = (0,0,0,0)):
+	def __init__(self):
+		#screen is a pygame screen object
+		#bounds is the coordinates on the screen that the
+		#board will be displayed
 		self.turn = 1
 		self.state = {}
 		#State will be an dictionary
 		#The keys are a tuple of position
 		#The values are the objects themselves
 		self.player = 1
-		self.hex_to_pix = Hex((0,0)).hex_to_pix
-		self.pix_to_hex = inv(self.hex_to_pix)
-		self.screen = screen
-		self.win_size = pygame.display.get_surface().get_size()
+		self.remaining_pieces = {}
+		self.remaining_pieces[1] = {'queen':1,
+									'spider':2,
+									'beetle':2,
+									'grasshopper':3,
+									'ant':3}
+		self.remaining_pieces[-1] = {'queen':1,
+									'spider':2,
+									'beetle':2,
+									'grasshopper':3,
+									'ant':3}
 
-	def cart_to_hex(self, cart_pos):
-		x, y = cart_pos
-		x -= self.win_size[0]/2
-		y -= self.win_size[1]/2
-		return rint(self.pix_to_hex@array([x,y]))
-
-	def valid_placements(self, player):
+	def valid_placements(self):
 
 		if self.turn == 1:
 			return [(0,0,0)]
+		if self.turn == 2:
+			return adjacent_tiles((0,0,0))
 
 
 		valid_tiles = []
@@ -475,7 +446,7 @@ class Board():
 		#get all the locations for the coordinates whose top tile is that players
 		#only look at the tiles on the bottom layer
 		player_tiles = [x for x in self.state
-						 if (self.state[top_tile(x,self.state)].player == player) and
+						 if (self.state[top_tile(x,self.state)].player == self.player) and
 						 self.state[x].pos[2] == 0]
 
 		for player_tile in player_tiles:
@@ -494,7 +465,7 @@ class Board():
 					# it is not a valid location to place a tile
 					if check in self.state:
 						tippy_top = top_tile(check, self.state)
-						if self.state[tippy_top].player != player:
+						if self.state[tippy_top].player != self.player:
 							valid = False
 							break
 				#if its valid add it to the list
@@ -503,15 +474,67 @@ class Board():
 
 		return valid_tiles
 
-	def add(self, game_piece):
-		#if pos in self.valid_placements():
-		self.state[game_piece.pos] = game_piece
+	def vacant_tiles(self):
+		if self.turn == 1:
+			return [(0,0,0)]
 
+		vacancies = []
+		for tile in self.state:
+			if tile[2] == 0:
+				for adj_tile in adjacent_tiles(tile):
+					if (not adj_tile in self.state) and (not adj_tile in vacancies):
+						vacancies.append(adj_tile)
+
+		return vacancies
+
+	def possible_moves(self):
+		moves = {}
+		for piece in [x for x in self.state.values() if x.player == self.player]:
+			piece_moves = piece.valid_moves(self.state)
+			if len(piece_moves) != 0:
+				moves[piece.pos] = piece_moves.copy()
+				#print('Move '+piece.bug+' '+str(piece_moves))
+
+		places = self.valid_placements()
+		if len(places) != 0:
+			for piece in self.remaining_pieces[self.player]:
+				if self.remaining_pieces[self.player][piece] != 0:
+					moves[piece] = places.copy()
+					#print('Place '+str(piece)+' '+str(places))
+		#print(len(moves))
+		return moves
+
+	def add(self, piece_type, pos):
+		self.remaining_pieces[self.player][piece_type] -= 1
+
+		if piece_type.lower() == 'queen':
+			game_piece = Queen(self.player, pos)
+		elif piece_type.lower() == 'ant':
+			game_piece = Ant(self.player, pos)
+		elif piece_type.lower() == 'spider':
+			game_piece = Spider(self.player, pos)
+		elif piece_type.lower() == 'beetle':
+			game_piece = Beetle(self.player, pos)
+		elif piece_type.lower() == 'grasshopper':
+			game_piece = Grasshopper(self.player, pos)
+		else:
+			print('Unknown piece: '+str(piece_type))
+			return False
+
+		if len(pos) == 3:
+			if pos[2] != 0:
+				self.state[(pos[0], pos[1], pos[2]-1)].under_beetle = True
+
+		self.state[game_piece.pos] = game_piece
+		self.turn +=1
+		self.player = -self.player
 
 	def move(self, start_pos, end_pos):
 		if start_pos in self.state:
-			self.state[start_pos].move_to(end_pos)
+
+			self.state[start_pos].pos = end_pos #update the piece objects position
 			self.state[end_pos] = self.state.pop(start_pos) #delete old position and add new position
+			#deal with beetle logic. Free up the tile it moved from, and lock down the tile it moved to
 			if end_pos[2] != 0:
 				self.state[(end_pos[0], end_pos[1], end_pos[2]-1)].under_beetle = True
 			if start_pos[2] != 0:
@@ -520,17 +543,169 @@ class Board():
 		self.turn +=1
 		self.player = -self.player
 
-	def draw(self, mousepos):
+	def is_game_over(self):
+		if len(self.possible_moves()) == 0:
+			return True, 0
 
-		hex_coords = self.cart_to_hex(mousepos)
-		highlight = Outline((hex_coords), self.screen, color = (0,255,0))
-		highlight.draw()
+		winners = []
+		for piece in self.state.values():
+			if piece.bug == 'queen':
+				alive = False
+				for tile in adjacent_tiles(piece.pos):
+					if tile not in self.state:
+						alive = True
+						break
+				if not alive:
+					winners.append(piece.player)
+
+		if len(winners) == 2:
+			return True, 0
+		elif len(winners) == 0:
+			return False, 0
+		elif winners[0] == 1:
+			return True, 1
+		else:
+			return True, -1
+
+
+
+class Gui():
+
+	def __init__(self, screen, board_bounds = (0,0,1080,720), menu_bounds = (0,0,160,720)):
+		self.board_bounds = board_bounds
+		self.screen = screen
+		self.board_width = board_bounds[2] - board_bounds[0]
+		self.board_height = board_bounds[3] - board_bounds[1]
+		self.board_xoffset = board_bounds[0]
+		self.board_yoffset = board_bounds[1]
+		self.camerapos = [0,0]
+		self.hex_rad = (board_bounds[3] - board_bounds[1])/22
+
+		self.hex_to_pix = array([[2*self.hex_rad, 2*self.hex_rad*cos(pi/3)],
+				   				 [0, 		-2*self.hex_rad*sin(pi/3)]])
+		self.pix_to_hex = inv(self.hex_to_pix)
+		self.hex_points = [(self.hex_rad*cos(x), self.hex_rad*sin(x)) for x in linspace(0,2*pi, 7)+pi/6]
+
+		pygame.font.init() # you have to call this at the start, 
+                   # if you want to use this module.
+		self.font = pygame.font.SysFont('Arial', 30)
+
+		self.mode = None
+		#modes:
+		#add - The next click will add a tile
+		#sel - next click will select a tile to move
+		#mov - the next click will move the selected piece
+		#None - Clicking does nothing
+		self.selected_piece = None
+		self.adding_type = None
+
+	def cart_to_hex(self, cart_pos):
+		x, y = cart_pos
+		#the board screen will be a subsection of the entire screen
+		#get the pixel distance from the center of teh subscreen to the mouse
+		x -= self.board_width/2 + self.board_xoffset
+		y -= self.board_height/2 + self.board_yoffset
+		#add the position of the camera to the pixelpos to account
+		#for the translated view
+		x += self.camerapos[0]
+		y += self.camerapos[1]
+		temp = rint(self.pix_to_hex@array([x,y]))
+		return (int(temp[0]), int(temp[1]), 0)
+
+	def hex_to_cart(self, hex_pos):
+		pix_pos = self.hex_to_pix@array([hex_pos[0], hex_pos[1]])
+		x, y = pix_pos
+		x -= self.camerapos[0]
+		y -= self.camerapos[1]
+		x += self.board_width/2 + self.board_xoffset
+		y += self.board_height/2 + self.board_yoffset
+		return (x, y)
+
+	def draw_outline(self, hex_pos, color):
+		center = self.hex_to_cart(hex_pos)
+		vertical_offset = hex_pos[2]*7
+		pointlist = [(x*1.1 + center[0] + vertical_offset, y*1.1 + center[1] - vertical_offset) for x, y in self.hex_points]
+		pygame.draw.polygon(self.screen, color, pointlist, 4)
+
+	def draw_piece(self, tile):
+
+		center = self.hex_to_cart(tile.pos)
+		vertical_offset = tile.pos[2]*7
+		pointlist = [(x + center[0] + vertical_offset, y + center[1] - vertical_offset) for x, y in self.hex_points]
+		im_pos = (center[0]-tile.im_size[0]/2 + vertical_offset,
+				  center[1]-tile.im_size[1]/2 - vertical_offset)
+
+		pygame.draw.polygon(self.screen, tile.color, pointlist, 0)
+		pygame.draw.polygon(self.screen, tile.linecolor, pointlist, 4)
+		self.screen.blit(tile.im, im_pos)
+
+	def draw_board(self, board, mousepos):
+
+		green_tiles = []
+		if self.mode == 'add':
+			green_tiles = board.valid_placements()
+		if self.mode == 'sel':
+			green_tiles = [x for x in board.state if (not board.state[x].under_beetle) and (board.state[x].player == board.player)]
+		if self.mode == 'mov':
+			green_tiles = self.selected_piece.valid_moves(board.state)
+
+		grey_tiles = board.vacant_tiles()
+		for grey in grey_tiles:
+			self.draw_outline(grey, (80,80,80))
+
+		hex_pos = self.cart_to_hex(mousepos)
+		if hex_pos in board.state:
+			top = top_tile(hex_pos, board.state)
+			hex_pos = (hex_pos[0], hex_pos[1], top[2])
+			if (self.selected_piece != None) and (self.selected_piece.bug == 'beetle'):
+				hex_pos = (hex_pos[0], hex_pos[1], top[2]+1)
+
+		if hex_pos in green_tiles:
+			outline_color =  (0,255,0)
+		else:
+			outline_color = (255,0,0)
 
 		#draw the tiles from bottom to top
-		bottom_tiles = [tile for tile in self.state.values() if tile.pos[2] == 0]
 		level = 0
-		while len(bottom_tiles) != 0:
+		bottom_tiles = [tile for tile in board.state.values() if tile.pos[2] == level]
+		if board.turn == 1:
+			self.draw_outline(hex_pos, outline_color)
+
+		while (len(bottom_tiles) != 0):
+
+			if hex_pos[2] == level:
+				self.draw_outline(hex_pos, outline_color)
+
+			for tile in bottom_tiles:
+				self.draw_piece(tile)
 			level += 1
-			for piece in bottom_tiles:
-				piece.draw()
-			bottom_tiles = [tile for tile in self.state.values() if tile.pos[2] == level]
+			bottom_tiles = [tile for tile in board.state.values() if tile.pos[2] == level]
+		if hex_pos[2] >= level:
+			self.draw_outline(hex_pos, outline_color)
+
+
+
+		textsurface = self.font.render('Player: '+str(board.player), False, (0, 0, 0))
+		self.screen.blit(textsurface,(960,0))
+		textsurface = self.font.render('Mode: '+str(self.mode), False, (0, 0, 0))
+		self.screen.blit(textsurface,(760,0))
+		Qs = board.remaining_pieces[board.player]['queen']
+		As = board.remaining_pieces[board.player]['ant']
+		Ss = board.remaining_pieces[board.player]['spider']
+		Bs = board.remaining_pieces[board.player]['beetle']
+		Gs = board.remaining_pieces[board.player]['grasshopper']
+		bottom_text = '[Q]ueens: '+str(Qs)+'  [A]nts: '+str(As)+'  [S]piders: '+str(Ss)+'  [B]eetles: '+str(Bs)+'  [G]rasshoppers: '+str(Gs)+'  [M]ove'
+		textsurface = self.font.render(bottom_text, False, (0, 0, 0))
+		self.screen.blit(textsurface,(0,680))
+
+		is_won, loser = board.is_game_over()
+		if is_won:
+			if loser == 0:
+				textsurface = self.font.render('DRAW', False, (255, 0, 0))
+				self.screen.blit(textsurface,(450,340))
+			elif loser == 1:
+				textsurface = self.font.render('BLACK WINS', False, (255, 0, 0))
+				self.screen.blit(textsurface,(450,340))
+			elif loser == -1:
+				textsurface = self.font.render('WHITE WINS', False, (255, 0, 0))
+				self.screen.blit(textsurface,(450,340))
