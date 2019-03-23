@@ -1,0 +1,25 @@
+1) Because the roration of the board does not matter, the state that we pass to the MCTS and NN should be rotationally independant
+	1a) You can use the two pieces (queens maybe) to define how you index the baoard
+	1b) You could spiral out from queen 1 to queen 2
+	1c) Doesnt work if both queens are not yet placed
+	1d) You could just use the first two pieces as the refference pieces!
+2) Zobrist Hashing is probably the best way to hash the game state. We need to do that to make the MCTS faster
+	2a) We might need to have an external hash table so that we can reuse the same hashes between runs
+	2b) Can you reconstruct the board state from only the hash? I dont think we can.
+	2c) Is this hash any different from what we will pass the NN? Yes, it is a very very compressed version.
+3) The game state for the NN should be look like this
+	3a) Every three numbers represents the coordinates of a peice
+	3b) Each piece is always represented by the same positions in the array
+	3c) The positional indexing is rotated according to the two datum tiles. See note 1
+4) The program can save its MCST statistics after every game. That way every time it plays it gets smarter
+	4a) It would get bigger and bigger over time
+	4b) maybe we only save the best moves?
+5) MCTS data structure will be a dictionary whose keys are hashed board states and whose values are the statistics
+	5a) It is possible to do the state transitions using only hash logic. If we do this, 
+	since we cant back out what the game state actually looks like how are we going to 
+	recreate the move that the MCTS determines? Easy, maybe it doesnt know what the board looks like but
+	it knows the moves from the initial one to get there. Just apply the moves. 
+	5b) If you cant recreate the board from the hash, will the NN even be able to give it a score? As we go we
+	will have to update the actuall Board class or something. The hash still saves a lot of time during the search.
+6) NN shall evaluate the state at each leaf in the MCTS and we will use its output instead of running a simulation
+	5a) HTF are we gunna train the neural network?
