@@ -2,17 +2,14 @@ import pygame
 import sys
 from numpy import *
 from Hive_funcs import *
-from monte_carlo import *
 
 win_size = (1080,720)
 
 if __name__ == '__main__':
-	vs_computer = True
 	pygame.init()
 	screen = pygame.display.set_mode(win_size)
 	board = Board()
 	gui = Gui(screen)
-	mc = Monte_Carlo(board)
 	while True:
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
@@ -21,13 +18,6 @@ if __name__ == '__main__':
 			is_won, loser = board.is_game_over()
 			if is_won:
 				continue
-
-			#if it is the computers move, have the comp pick a move
-			if vs_computer and (board.player == -1):
-				ai_move = mc.get_move(board)
-				board.move(ai_move)
-				continue
-
 
 			if event.type == pygame.KEYDOWN:
 				if pygame.key.get_pressed()[pygame.K_m]:
@@ -88,6 +78,8 @@ if __name__ == '__main__':
 
 				elif gui.mode == 'add':
 					if pos in board.valid_placements():
+						print(gui.adding_type)
+						print(pos)
 						board.add_piece(gui.adding_type, pos)
 						gui.mode = None
 						gui.adding_type = None

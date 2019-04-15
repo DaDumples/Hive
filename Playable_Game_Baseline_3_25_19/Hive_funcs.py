@@ -93,15 +93,14 @@ def is_jump(p1,p2,state):
 	return True
 
 def rotate(direct, num_rots = 1, direct_string = 'left'):
-	rotations = num_rots%6
 	temp = list(direct)
 	if direct_string.lower() == 'left':
-		for i in range(rotations):
+		for i in range(num_rots):
 			z = -(temp[0] + temp[1])
 			temp[0] = -temp[1]
 			temp[1] = -z
 	elif direct_string.lower() == 'right':
-		for i in range(rotations):
+		for i in range(num_rots):
 			z = -(temp[0] + temp[1])
 			temp[1] = -temp[0]
 			temp[0] = -z
@@ -147,59 +146,6 @@ def top_tile(pos, state):
 		top_tile = (top_tile[0],top_tile[1], top_tile[2]+1)
 		on_top = not state[top_tile].under_beetle
 	return top_tile
-
-def relative_rotation(pointa, pointb):
-	x = array([1,0,-1])
-	y = array([0,1,-1])
-	z = array([-1,1,0])
-	za = -pointa[0] - pointa[1]
-	zb = -pointb[0] - pointb[1]
-	A = array([pointa[0], pointa[1], za])
-	B = array([pointb[0], pointb[1], zb])
-	xdot = dot(x,B-A)
-	ydot = dot(y,B-A)
-	zdot = dot(z,B-A)
-	if (abs(ydot) >= abs(xdot)) and (abs(ydot) > abs(zdot)):
-		if sign(ydot) == 1:
-			return 2
-		else:
-			return 5
-	elif (abs(xdot) >= abs(zdot)) and (abs(xdot) > abs(ydot)):
-		if sign(xdot) == 1:
-			return 0
-		else:
-			return 3
-	else:
-		if sign(zdot) == 1:
-			return 4
-		else:
-			return 1
-
-def get_ring(radius, h = 0):
-
-	directions = [(-1,1),
-				  (-1,0),
-				  (0,-1),
-				  (1,-1),
-				  (1,0),
-				  (0,1)]
-	c_tile = (radius,0,h)
-	tiles = []
-	for direction in directions:
-		for r in range(radius):
-			c_tile = (c_tile[0] + direction[0], c_tile[1] + direction[1], h)
-			tiles.append(c_tile)
-
-	return tiles
-
-def get_area(radius):
-	tiles = [(0,0,0)]
-	for r in range(1,radius+1):
-		tiles += get_ring(r)
-	return tiles
-
-
-
 
 class Queen():
 
@@ -309,6 +255,7 @@ class Ant():
 				seed_tiles.remove(tile)
 
 		return valid_moves
+
 
 class Beetle():
 
@@ -463,11 +410,11 @@ class Grasshopper():
 
 class Board():
 
-	def __init__(self, state = None, turn = 1, player = 1, past_moves = None):
+	def __init__(self, state = None):
 		#screen is a pygame screen object
 		#bounds is the coordinates on the screen that the
 		#board will be displayed
-		self.turn = turn
+		self.turn = 1
 		if state == None:
 			self.state = {}
 		else:
@@ -475,7 +422,7 @@ class Board():
 		#State will be an dictionary
 		#The keys are a tuple of position
 		#The values are the objects themselves
-		self.player = player
+		self.player = 1
 		self.remaining_pieces = {}
 		self.remaining_pieces[1] = {'queen':1,
 									'spider':2,
@@ -487,16 +434,6 @@ class Board():
 									'beetle':2,
 									'grasshopper':3,
 									'ant':3}
-
-		self.positions = get_area(11)
-		if past_moves == None:
-			self.past_moves = [None]*9
-		else:
-			if len(past_moves) != 9:
-				print('past_moves list is not the correct length')
-			self.past_moves = past_moves
-
-
 
 	def valid_placements(self):
 
@@ -553,27 +490,20 @@ class Board():
 		return vacancies
 
 	def possible_moves(self):
-		moves = []
+		moves = {}
 		for piece in [x for x in self.state.values() if x.player == self.player]:
 			piece_moves = piece.valid_moves(self.state)
 			if len(piece_moves) != 0:
-				for move in piece_moves:
-					moves.append(('mov', piece.pos, move))
+				moves[piece.pos] = piece_moves.copy()
 				#print('Move '+piece.bug+' '+str(piece_moves))
 
 		places = self.valid_placements()
 		if len(places) != 0:
 			for piece in self.remaining_pieces[self.player]:
 				if self.remaining_pieces[self.player][piece] != 0:
-					for place in places:
-						moves.append(('add',piece, place))
+					moves[piece] = places.copy()
 					#print('Place '+str(piece)+' '+str(places))
 		#print(len(moves))
-		print(self.state)
-		if len(moves) == 0:
-			moves = [('pass',)]
-
-
 		return moves
 
 	def add_piece(self, piece_type, pos):
@@ -600,8 +530,6 @@ class Board():
 		self.state[game_piece.pos] = game_piece
 		self.turn +=1
 		self.player = -self.player
-		del self.past_moves[0]
-		self.past_moves.append(('add',piece_type, pos))
 
 	def move_piece(self, start_pos, end_pos):
 		if start_pos in self.state:
@@ -616,20 +544,9 @@ class Board():
 
 		self.turn +=1
 		self.player = -self.player
-		del self.past_moves[0]
-		self.past_moves.append(('mov',start_pos, end_pos))
-
-		return self.state
-
-	def turn_passed(self):
-		self.turn += 1
-		self.player = -self.player
-		del self.past_moves[0]
-		self.past_moves.append(('pass',))
 
 
-
-	def move(self, action):
+	def move(action):
 		#action = ('mov', (x,y,z), (x,y,z))
 		#action = ('add', 'beetle', (x,y,z))
 		if action[0] == 'add':
@@ -640,18 +557,13 @@ class Board():
 			pos1 = action[1]
 			pos2 = action[2]
 			self.move_piece(pos1,pos2)
-		elif action[0] == 'pass':
-			self.turn_passed()
-			
 
 		return self.state
 
 
 	def is_game_over(self):
-		prev_moves = self.past_moves
-		if (prev_moves[0] == prev_moves) and (prev_moves[4] == prev_moves[8]) and (prev_moves[0] == prev_moves[8]):
-			if (prev_moves[0] != None) and (prev_moves[0] != ('pass',)):
-				return True, -self.player
+		if len(self.possible_moves()) == 0:
+			return True, 0
 
 		winners = []
 		for piece in self.state.values():
@@ -672,10 +584,6 @@ class Board():
 			return True, 1
 		else:
 			return True, -1
-
-	def copy_board(self):
-		new_board = Board(state = self.state, turn = self.turn, player = self.player, past_moves = self.past_moves)
-		return new_board
 
 
 
