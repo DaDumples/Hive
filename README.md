@@ -8,6 +8,7 @@ Q, A, S, B , G will allow for placement of a Queen, Ant, Spider, Beetle, and Gra
 To run:
 
 From Playable_Baseline, current version is as it was when I passed out one day during finals week.
+
 python Hive.py
 
 This file includes some visualization scripts that may or may not still work. They were very useful at some point!
