@@ -3,7 +3,7 @@
 The rules of Hive:
 https://www.ultraboardgames.com/hive/game-rules.php
 
-Q, A, S, B , G will allow for placement of a Queen, Ant, Spider, Beetle, and Grasshopper respectively. M allows you to select a piece and then a location to move to. If you have any complaints with the cames cutting edge artistic decisions please send me a kindly worded email.
+Q, A, S, B , G will allow for placement of a Queen, Ant, Spider, Beetle, and Grasshopper respectively. M allows you to select a piece and then a location to move to. If you have any complaints with the games cutting edge artistic decisions please send me a kindly worded email.
 
 To run:
 
